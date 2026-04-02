@@ -14,6 +14,7 @@ DISCORD_ADMIN_ID = int(os.environ["DISCORD_ADMIN_ID"])
 # important variables 
 chance_of_gif = 10 # 1 in x chance for a gif to be sent when a message is receieved.
 variance_of_gif = 3 # number of pages to randomly select from when searching for a gif. higher variance means more random gifs, but also more likely to return no results.
+locked = False # if true, only the admin can change settings. if false, anyone can change settings.
 
 # Set up the Discord client with the necessary intents
 intents = discord.Intents.default()
@@ -37,7 +38,7 @@ def load_settings():
         settings = json.load(f)
         chance_of_gif = settings.get('chance_of_gif', chance_of_gif)
         variance_of_gif = settings.get('variance_of_gif', variance_of_gif)
-        locked = settings.get('locked', False)
+        locked = settings.get('locked', locked)
 
 def save_settings():
     settings = {
@@ -55,6 +56,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
+    global locked, chance_of_gif, variance_of_gif
     if message.author == client.user:
         return
     
@@ -96,7 +98,6 @@ async def on_message(message):
                 if new_chance <= 0:
                     await message.channel.send("Chance must be a positive integer.")
                     return
-                global chance_of_gif
                 chance_of_gif = new_chance
                 save_settings()
                 await message.channel.send(f"Chance of gif changed to 1 in {chance_of_gif}")
@@ -111,7 +112,6 @@ async def on_message(message):
                 if new_variance <= 0:
                     await message.channel.send("Variance must be a positive integer.")
                     return
-                global variance_of_gif
                 variance_of_gif = new_variance
                 save_settings()
                 await message.channel.send(f"Variance of gif changed to {variance_of_gif} pages")
