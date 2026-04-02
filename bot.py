@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 TOKEN = os.environ["DISCORD_TOKEN"]
 KLIPY_API_KEY = os.environ["KLIPY_API_KEY"]
+DISCORD_ADMIN_ID = int(os.environ["DISCORD_ADMIN_ID"])
 
 # important variables 
 chance_of_gif = 10 # 1 in x chance for a gif to be sent when a message is receieved.
@@ -31,16 +32,18 @@ def search_gif(urlencoded_keywords, user_id, page=1):
     return gif_url
 
 def load_settings():
-    global chance_of_gif, variance_of_gif
+    global chance_of_gif, variance_of_gif, locked
     with open('settings.json', 'r') as f:
         settings = json.load(f)
         chance_of_gif = settings.get('chance_of_gif', chance_of_gif)
         variance_of_gif = settings.get('variance_of_gif', variance_of_gif)
+        locked = settings.get('locked', False)
 
 def save_settings():
     settings = {
         'chance_of_gif': chance_of_gif,
-        'variance_of_gif': variance_of_gif
+        'variance_of_gif': variance_of_gif,
+        'locked': locked
     }
     with open('settings.json', 'w') as f:
         json.dump(settings, f)
@@ -64,11 +67,27 @@ async def on_message(message):
             help_message = ("**GifBot Commands:**\n"
                             "`gb changechance <int>` - Adjusts the chance of a gif to '1/x'\n"
                             "`gb changevariance <int>` - Adjusts the randomness of gifs returned. e.g. 1 would always return the same gif.\n"
+                            "`gb lock` - Locks the settings, preventing further changes.\n"
+                            "`gb unlock` - Unlocks the settings, allowing changes to be made by anyone.\n"
                             "`gb help` - Display this help message.")
             await message.channel.send(help_message)
         if parts[1] == "ping":
             await message.channel.send("Pong!")
-        if parts[1] == "changechance":
+        if parts[1] == "lock":
+            if message.author.id != DISCORD_ADMIN_ID:
+                await message.channel.send("You do not have permission to use this command.")
+                return
+            locked = True
+            save_settings()
+            await message.channel.send("Settings have been locked. No further changes can be made.")
+        if parts[1] == "unlock":
+            if message.author.id != DISCORD_ADMIN_ID:
+                await message.channel.send("You do not have permission to use this command.")
+                return
+            locked = False
+            save_settings()
+            await message.channel.send("Settings have been unlocked. Changes can now be made by anyone.")
+        if parts[1] == "changechance" and (not locked or message.author.id == DISCORD_ADMIN_ID):
             try:
                 new_chance = int(parts[2])
                 if new_chance <= 0:
@@ -80,7 +99,7 @@ async def on_message(message):
                 await message.channel.send(f"Chance of gif changed to 1 in {chance_of_gif}")
             except (IndexError, ValueError):
                 await message.channel.send("Please provide a valid integer for the new chance.")
-        if parts[1] == "changevariance":
+        if parts[1] == "changevariance" and (not locked or message.author.id == DISCORD_ADMIN_ID):
             try:
                 new_variance = int(parts[2])
                 if new_variance <= 0:
