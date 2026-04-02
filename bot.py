@@ -87,7 +87,10 @@ async def on_message(message):
             locked = False
             save_settings()
             await message.channel.send("Settings have been unlocked. Changes can now be made by anyone.")
-        if parts[1] == "changechance" and (not locked or message.author.id == DISCORD_ADMIN_ID):
+        if parts[1] == "changechance":
+            if locked and message.author.id != DISCORD_ADMIN_ID:
+                await message.channel.send("Settings are locked. You do not have permission to change the chance.")
+                return
             try:
                 new_chance = int(parts[2])
                 if new_chance <= 0:
@@ -99,7 +102,10 @@ async def on_message(message):
                 await message.channel.send(f"Chance of gif changed to 1 in {chance_of_gif}")
             except (IndexError, ValueError):
                 await message.channel.send("Please provide a valid integer for the new chance.")
-        if parts[1] == "changevariance" and (not locked or message.author.id == DISCORD_ADMIN_ID):
+        if parts[1] == "changevariance":
+            if locked and message.author.id != DISCORD_ADMIN_ID:
+                await message.channel.send("Settings are locked. You do not have permission to change the variance.")
+                return
             try:
                 new_variance = int(parts[2])
                 if new_variance <= 0:
