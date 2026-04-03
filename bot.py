@@ -129,6 +129,6 @@ async def on_message(message):
             selected_keywords = keywords[start_index:start_index + num_keywords]
             urlencoded_keywords = "%20".join(selected_keywords)
             gif_url = search_gif(urlencoded_keywords, message.author.id, page=random.randint(1, variance_of_gif))
-            await message.channel.send(gif_url)
+            await message.channel.send(gif_url, reference=message)
 
 client.run(TOKEN)
